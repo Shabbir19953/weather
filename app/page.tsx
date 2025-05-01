@@ -3,8 +3,18 @@
 import Image from 'next/image';
 import { useState, FormEvent } from 'react';
 
+interface HourlyForecast {
+  time: string;
+  temp_c: number;
+  condition: {
+    icon: string;
+    text: string;
+  };
+}
+
 interface ForecastDay {
   date: string;
+  hour: HourlyForecast[];
   day: {
     maxtemp_c: number;
     mintemp_c: number;
@@ -78,116 +88,164 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-200 to-blue-400 flex flex-col items-center px-4 py-12">
-      {/* Search Box */}
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md flex flex-col sm:flex-row items-center gap-4 mb-8"
-      >
-        <input
-          type="text"
-          value={searchCity}
-          onChange={(e) => setSearchCity(e.target.value)}
-          placeholder="Enter city name"
-          className="flex-1 px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          type="submit"
-          className="px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+    <div className="min-h-screen bg-[url('/rain-bg.jpg')] bg-cover bg-center text-white px-4 py-8">
+      {/* Main container with different layouts based on weather data */}
+      <div className={`max-w-6xl mx-auto ${weatherData ? '' : 'flex flex-col items-center justify-center min-h-[70vh]'}`}>
+        {/* Search form - always centered when no data, top when data exists */}
+        <form
+          onSubmit={handleSubmit}
+          className={`w-full max-w-md flex flex-col sm:flex-row items-center gap-4 ${weatherData ? 'mb-8' : 'mb-0'}`}
         >
-          Search
-        </button>
-      </form>
+          <input
+            type="text"
+            value={searchCity}
+            onChange={(e) => setSearchCity(e.target.value)}
+            placeholder="Enter city name"
+            className="flex-1 px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            className="px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition w-full sm:w-auto"
+          >
+            Search
+          </button>
+        </form>
 
-      {/* Error */}
-      {error && (
-        <p className="text-red-700 bg-red-100 px-4 py-2 rounded-lg mb-4 w-full max-w-md text-center">
-          {error}
-        </p>
-      )}
+        {/* Error message */}
+        {error && (
+          <p className="text-red-700 bg-red-100 px-4 py-2 rounded-lg mb-4 w-full max-w-md text-center">
+            {error}
+          </p>
+        )}
 
-      {/* Loading */}
-      {loading && (
-        <p className="text-blue-800 font-semibold text-lg">Loading...</p>
-      )}
-
-      {/* Weather Info */}
-      {weatherData && !loading && (
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6 text-center">
-          {/* City Info */}
-          <h2 className="text-3xl font-bold text-blue-700">
-            {weatherData.location.name}, {weatherData.location.country}
-          </h2>
-          <p className="text-gray-500 mt-1">{weatherData.location.localtime}</p>
-
-          {/* Icon + Temp */}
-          <div className="flex flex-col items-center mt-6">
-            <Image
-              src={`https:${weatherData.current.condition.icon}`}
-              width={96}
-              height={96}
-              alt="Weather Icon"
-              className="drop-shadow-md"
-            />
-            <h1 className="text-5xl font-bold mt-2">{weatherData.current.temp_c}°C</h1>
-            <p className="text-xl text-gray-700 mt-1">{weatherData.current.condition.text}</p>
+        {/* Loading indicator */}
+        {loading && (
+          <div className="w-full flex justify-center py-8">
+            <p className="text-blue-800 font-semibold text-lg">Loading...</p>
           </div>
+        )}
 
-          {/* Weather Stats */}
-          <div className="grid grid-cols-2 gap-4 mt-8 text-left text-sm sm:text-base">
-            <div>
-              <p className="font-medium text-gray-600">Humidity</p>
-              <p className="text-blue-600 font-semibold">{weatherData.current.humidity}%</p>
-            </div>
-            <div>
-              <p className="font-medium text-gray-600">Wind Speed</p>
-              <p className="text-blue-600 font-semibold">{weatherData.current.wind_mph} mph</p>
-            </div>
-            <div>
-              <p className="font-medium text-gray-600">Pressure</p>
-              <p className="text-blue-600 font-semibold">{weatherData.current.pressure_mb} mb</p>
-            </div>
-            <div>
-              <p className="font-medium text-gray-600">Visibility</p>
-              <p className="text-blue-600 font-semibold">{weatherData.current.vis_km} km</p>
-            </div>
-          </div>
+        {/* Weather data display */}
+        {weatherData && !loading && (
+          <div className="grid lg:grid-cols-3 gap-6 bg-black/30 backdrop-blur-lg rounded-3xl p-6 shadow-lg mt-4">
+            {/* LEFT COLUMN - MAIN WEATHER */}
+            <div className="lg:col-span-1 flex flex-col gap-6">
+              {/* Location & Time */}
+              <div className="bg-black/40 p-6 rounded-2xl">
+                <h2 className="text-2xl font-semibold">{weatherData.location.name}, {weatherData.location.country}</h2>
+                <p className="text-sm text-gray-300">{weatherData.location.localtime}</p>
+              </div>
 
-          {/* Forecast */}
-          <div className="mt-10">
-            <h3 className="text-xl font-bold text-gray-700 mb-4">Next 3 Days Forecast</h3>
-            <div className="grid sm:grid-cols-3 gap-4">
-              {weatherData.forecast.forecastday.map((day) => (
-                <div key={day.date} className="bg-blue-50 p-4 rounded-lg text-center shadow">
-                  <p className="text-gray-600 font-medium mb-2">{day.date}</p>
+              {/* Temperature & Summary */}
+              <div className="bg-black/40 p-6 rounded-2xl text-center">
+                {weatherData.current.condition.icon && (
                   <Image
-                    src={`https:${day.day.condition.icon}`}
-                    width={48}
-                    height={48}
-                    alt={day.day.condition.text}
+                    src={`https:${weatherData.current.condition.icon}`}
+                    width={80}
+                    height={80}
+                    alt="Weather Icon"
                     className="mx-auto"
                   />
-                  <p className="text-gray-800 mt-1 text-sm">{day.day.condition.text}</p>
-                  <p className="text-blue-700 font-bold">{day.day.maxtemp_c}° / {day.day.mintemp_c}°C</p>
-                  {/* Rain Forecast */}
-                  <p className="text-blue-600  mt-2">
-                    Rain: {day.day.totalprecip_mm} mm
-                  </p>
+                )}
+                <h1 className="text-5xl font-bold mt-2">{weatherData.current.temp_c}°</h1>
+                <p className="text-xl">{weatherData.current.condition.text}</p>
+              </div>
+
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-black/40 p-4 rounded-xl">
+                  <p className="text-sm text-gray-400">Feels Like</p>
+                  <p className="text-xl font-semibold">{weatherData.current.temp_c}°</p>
                 </div>
-              ))}
+                <div className="bg-black/40 p-4 rounded-xl">
+                  <p className="text-sm text-gray-400">Humidity</p>
+                  <p className="text-xl font-semibold">{weatherData.current.humidity}%</p>
+                </div>
+                <div className="bg-black/40 p-4 rounded-xl">
+                  <p className="text-sm text-gray-400">Visibility</p>
+                  <p className="text-xl font-semibold">{weatherData.current.vis_km} km</p>
+                </div>
+                <div className="bg-black/40 p-4 rounded-xl">
+                  <p className="text-sm text-gray-400">Pressure</p>
+                  <p className="text-xl font-semibold">{weatherData.current.pressure_mb} mb</p>
+                </div>
+              </div>
+            </div>
+
+            {/* CENTER - HOURLY FORECAST */}
+            <div className="lg:col-span-2 flex flex-col gap-6">
+              {/* Hourly Forecast */}
+              <div className="bg-black/40 p-6 rounded-2xl">
+                <h3 className="text-lg font-semibold mb-4">Hourly Forecast</h3>
+                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                  {[15, 16, 17, 18, 19].map((hour) => {
+                    const hourData = weatherData.forecast.forecastday[0].hour[hour];
+                    return (
+                      <div key={hour} className="min-w-[90px] text-center bg-black/30 p-4 rounded-xl">
+                        <p className="text-sm">{hour}:00</p>
+                        {hourData?.condition?.icon && (
+                          <Image 
+                            src={`https:${hourData.condition.icon}`} 
+                            width={40} 
+                            height={40} 
+                            alt="hourly" 
+                            className="mx-auto" 
+                          />
+                        )}
+                        <p className="text-lg font-medium">{hourData?.temp_c}°</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 3-Day Forecast */}
+              <div className="bg-black/40 p-6 rounded-2xl">
+                <h3 className="text-lg font-semibold mb-4">3-Day Forecast</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {weatherData.forecast.forecastday.map((day) => (
+                    <div key={day.date} className="bg-black/30 p-4 rounded-xl text-center">
+                      <p className="text-sm text-gray-300">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                      {day.day.condition.icon && (
+                        <Image 
+                          src={`https:${day.day.condition.icon}`} 
+                          width={40} 
+                          height={40} 
+                          alt="forecast" 
+                          className="mx-auto" 
+                        />
+                      )}
+                      <p className="text-sm">{day.day.condition.text}</p>
+                      <p className="text-lg font-semibold">{day.day.maxtemp_c}° / {day.day.mintemp_c}°</p>
+                      <p className="text-sm text-blue-400 mt-1">Rain: {day.day.totalprecip_mm} mm</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* UV Index & Wind */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-black/40 p-4 rounded-xl">
+                  <p className="text-sm text-gray-400">UV Index</p>
+                  <p className="text-xl font-bold">3 <span className="text-yellow-400">Moderate</span></p>
+                  <div className="h-2 mt-2 bg-gradient-to-r from-green-400 via-yellow-400 to-pink-500 rounded-full" />
+                  <p className="text-xs mt-1 text-gray-400">Use sun protection until 16:00</p>
+                </div>
+                <div className="bg-black/40 p-4 rounded-xl">
+                  <p className="text-sm text-gray-400">Wind</p>
+                  <p className="text-xl font-bold">{weatherData.current.wind_mph} MPH</p>
+                  <p className="text-sm text-gray-400 mt-1">Gusts: 9 MPH</p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-<footer className="mt-12 text-center text-sm text-gray-700">
-<p className="mb-1">
- All Rights are Reserved for Ghulam Shabbir
-</p>
-<p className="text-yellow-500">Developed by Ghulam Shabbir</p>
-</footer>
-
+      <footer className="text-center mt-8 text-sm text-white/70">
+        <p className="mb-1">All Rights Reserved &copy; Ghulam Shabbir</p>
+        <p className="text-yellow-400">Developed by Ghulam Shabbir</p>
+      </footer>
     </div>
   );
 }
-

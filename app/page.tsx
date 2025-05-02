@@ -62,7 +62,8 @@ export default function Home() {
         `https://api.weatherapi.com/v1/forecast.json?key=fc677a2273c843bcb5150539252804&q=${city}&days=3`
       );
       const data = await res.json();
-
+console.log("data is : ",data);
+console.log("Selected city is :",city)
       if (data.error) {
         setWeatherData(null);
         setError(data.error.message || 'City not found');
@@ -201,6 +202,7 @@ export default function Home() {
 
               {/* 3-Day Forecast */}
               <div className="bg-black/40 p-6 rounded-2xl">
+              
                 <h3 className="text-lg font-semibold mb-4">3-Day Forecast</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {weatherData.forecast.forecastday.map((day) => (

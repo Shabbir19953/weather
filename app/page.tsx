@@ -125,7 +125,7 @@ export default function Home() {
         )}
 
         {/* Weather data display */}
-        {weatherData && !loading && (
+        {weatherData &&!loading && (
           <div className="grid lg:grid-cols-3 gap-6 bg-black/30 backdrop-blur-lg rounded-3xl p-6 shadow-lg mt-4">
             {/* LEFT COLUMN - MAIN WEATHER */}
             <div className="lg:col-span-1 flex flex-col gap-6">
